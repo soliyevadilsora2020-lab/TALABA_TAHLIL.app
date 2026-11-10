@@ -1,0 +1,48 @@
+name: Windows dasturini yig'ish
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Kutubxonalarni o'rnatish
+        run: pip install -r requirements.txt pyinstaller
+
+      - name: Dasturni yig'ish
+        run: >
+          pyinstaller app/main.py --name TalabaTahlil --windowed --noconfirm
+          --icon app/icon.ico
+          --add-data "model;model"
+          --add-data "data/namuna_2025.xlsx;data"
+          --add-data "app/icon.png;app"
+          --paths app
+          --exclude-module tkinter --exclude-module IPython --exclude-module pkg_resources
+
+      - name: Arxivlash
+        shell: pwsh
+        run: Compress-Archive -Path dist/TalabaTahlil -DestinationPath TalabaTahlil-windows.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: TalabaTahlil-windows
+          path: TalabaTahlil-windows.zip
+
+      - name: Releases bo'limiga joylash
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.${{ github.run_number }}
+          name: TalabaTahlil v1.0.${{ github.run_number }}
+          files: TalabaTahlil-windows.zip
